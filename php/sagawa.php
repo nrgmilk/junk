@@ -1,11 +1,17 @@
 <?php
-
+/*
+ * コンソール上からパパっと配達状況を確認したいがために書いたスクリプト
+ * 結果はvar_dumpで吐き出すだけです。
+ * 
+ * ■使い方
+ * php sagawa.php お問い合せ番号(例: 401198325253)
+ */
+ 
 define("SAGAWA_REQUEST_URI", "http://k2k.sagawa-exp.co.jp/p/sagawa/web/okurijoinput.jsp");
 
 if(!isset($argv[1])) die("no code");
 
 $requestCode = $argv[1];
-//"401198325253";
 
 //--[1]--//
 
@@ -72,24 +78,6 @@ $result = mb_convert_encoding($result, 'UTF-8', 'cp932');
 
 $tidy = tidy_parse_string($result, array(), "raw");
 
-/*
-$code = $tidy->html()->child[1]
-			->child[0]
-			->child[1]
-			->child[0]
-			->child[1]
-			->child[0]
-			->child[0]
-			->child[4]
-			->child[3]
-			->child[0]
-			->child[0]
-			->child[0]
-			->child[0]
-			->child[0]
-			->value;
-*/
-
 // 最新状況
 $status = $tidy->html()->child[1]
 			->child[0]
@@ -147,7 +135,12 @@ var_dump($result);
 
 
 // データGET
-function httpGet($str_target_url, $str_timeout_sec = 180) 
+/**
+ * @param string $target_url
+ * @param int $timeout_sec
+ * @return string
+ */
+function httpGet($target_url, $timeout_sec = 180) 
 {
 	$response = '';
 	do{
@@ -155,10 +148,10 @@ function httpGet($str_target_url, $str_timeout_sec = 180)
 		$ch = curl_init();
 		$options = array(
 			      CURLOPT_USERAGENT => "Mozilla/5.0 (X11; U; FreeBSD amd64; ja-JP; rv:11.0a1) Gecko/20111116 Firefox/11.0a1",
-			      CURLOPT_URL => $str_target_url,
+			      CURLOPT_URL => $target_url,
 			      CURLOPT_SSL_VERIFYPEER => FALSE,
 			      CURLOPT_RETURNTRANSFER => TRUE,
-			      CURLOPT_TIMEOUT => $str_timeout_sec,
+			      CURLOPT_TIMEOUT => $timeout_sec,
 			      );
 
 		curl_setopt_array($ch, $options);
@@ -170,27 +163,33 @@ function httpGet($str_target_url, $str_timeout_sec = 180)
 }
 
 // データPOST
-function httpPost($str_target_url, $array_data, $str_timeout_sec = 180) 
+/**
+ * @param string $target_url
+ * @param array $post_data
+ * @param int $timeout_sec
+ * @return string
+ */
+function httpPost($target_url, $post_data, $timeout_sec = 180) 
 {
 	$response = '';
 	do{
-		if(!is_array($array_data)) break;
+		if(!is_array($post_data)) break;
 		
 		$catData = NULL;
-		foreach($array_data as $key => $value){
+		foreach($post_data as $key => $value){
 			$catData .= '&' . urlencode($key) . '=' . urlencode($value);
 		}
 		list($empty, $postData) = explode('&', $catData, 2);
 		
 		$ch = curl_init();
 		$options = array(
-			CURLOPT_USERAGENT => "Mozilla/5.0 (X11; U; FreeBSD amd64; ja-JP; rv:11.0a1) Gecko/20111116 Firefox/11.0a1",
-			CURLOPT_URL => $str_target_url,
+			CURLOPT_USERAGENT => "Mozilla/5.0 (X11; FreeBSD amd64; rv:28.0) Gecko/20100101 Firefox/28.0",
+			CURLOPT_URL => $target_url,
 			CURLOPT_POST => TRUE,
 			CURLOPT_POSTFIELDS => $postData,
 			CURLOPT_SSL_VERIFYPEER => FALSE,
 			CURLOPT_RETURNTRANSFER => TRUE,
-			CURLOPT_TIMEOUT => $str_timeout_sec,
+			CURLOPT_TIMEOUT => $timeout_sec,
 			CURLOPT_REFERER => SAGAWA_REQUEST_URI,
 		);
 
